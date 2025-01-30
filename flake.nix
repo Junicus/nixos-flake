@@ -4,7 +4,8 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-
+    stylix.url = "github:danth/stylix/release-24.11";
+    catppuccin.url = "github:catppuccin/nix";
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -16,32 +17,25 @@
     nixpkgs, 
     home-manager, 
     ... 
-  } @ inputs: let
-    inherit (self) outputs;
-    systems = [
-      "x86_64-linux"
-    ];
-    forAllSystems = nixpkgs.lib.genAttrs systems;
+  } @ inputs: 
+  let
+    system = "x86_64-linux";
+    username = "junicus";
+    pkgs = import nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    }; 
+    lib = nixpkgs.lib;
   in {
-    packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
-    formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-
-    overlays = import ./overlays {inherit inputs;};
-    nixosModules = import ./modules/nixos;
-    homeManagerModules = import ./modules/home-manager;
-
     nixosConfigurations = {
       irsi1 = nixpkgs.lib.nixosSystem {
-        modules = [ ./hosts/irsi1 ];
-	specialArgs = { inherit inputs outputs; };
-      };
-    };
-
-    homeConfigurations = {
-      "junicus@irsi1" = home-manager.lib.homeManagerConfiguration {
-	pkgs = nixpkgs.legacyPackages.x86_64-linux;
-	extraSpecialArgs = { inherit inputs outputs; };
-        modules = [ ./home/junicus/irsi1.nix ];
+        inherit system;
+        modules = [ 
+	  ./hosts/irsi1
+	  inputs.stylix.nixosModules.stylix
+	  inputs.catppuccin.nixosModules.catppuccin
+	];
+	specialArgs = { host = "irsi1"; inherit self inputs username; };
       };
     };
   };

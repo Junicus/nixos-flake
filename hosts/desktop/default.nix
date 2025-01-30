@@ -13,7 +13,8 @@
   in {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/core
+    ./users.nix
+    ../../modules/nixos
   ];
 
   environment.systemPackages = (with pkgs; [
